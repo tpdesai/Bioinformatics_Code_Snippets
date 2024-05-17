@@ -1,0 +1,309 @@
+Tresha P. Desai
+
+----------------------------------------------------
+def pattern_count(text: str, pattern: str) -> int:
+    length = len(pattern)
+    #print(length)
+    count = 0
+    for i in range(len(text)-length+1):
+        word = text[i:i+length]
+        #print(word)
+        if word == pattern:
+            count += 1
+    return count
+        
+ ---------------------------------------------------
+
+def profile_most_probable_kmer(text: str, k: int,
+    
+                               profile: list[dict[str, float]]) -> str:
+    
+    mainValue = 0
+    
+  
+    finalString = ''
+    for nt in range(len(text)-k):
+        
+        
+        word = text[nt:nt+k]
+        value = 1
+        i = 0
+        for l in word:
+            
+            if l == 'A':
+                value *= profile[i]['A']
+                i += 1 
+
+            if l == 'C':
+                value *= profile[i]['C']
+                i += 1 
+
+            if l == 'G':
+                value *= profile[i]['G']
+                i += 1 
+
+            if l == 'T':
+                value *= profile[i]['T']
+                i += 1 
+         
+
+        if value > mainValue:
+            mainValue = value
+      
+            finalString =word
+   
+             
+    return finalString  
+----------------------------------------------------------
+
+
+def randomized_motif_search(dna: list[str], k: int, t: int) -> list[str]:
+    final = 100000000000000000
+    bestListEver = []
+    for best in range(155):
+        
+        motif_random_list = random_motif(dna, k, t)
+
+        bestScore = 100000000000
+        returnBestList = []
+
+        for i in range(1000):
+
+            matrix , score = make_matrix(motif_random_list, k, t)
+            returnList = for_all_dna_strings(dna, k , matrix)
+            motif_random_list = returnList
+            if score < bestScore:
+                bestScore = score
+
+                returnBestList = returnList
+
+
+        if bestScore<final:
+            final = bestScore
+            bestListEver = returnBestList
+            
+    return bestListEver
+            
+
+
+# the first randomly generated motifs
+# only once then no need anymore
+
+
+def random_motif(dna, k, t):
+    list1 = []
+    for i in range(len(dna)):
+        string1 = dna[i]
+        number = random.randrange(len(string1)-k+1)
+        wanted = string1[number:number+k]
+        list1.append(wanted)
+        
+    return list1
+
+# this is for only 1 string from previous section
+
+def profile_most_probable_kmer(text, k, profile):
+    
+    mainValue = 0
+  
+    finalString = ''
+    for nt in range(len(text)-k):
+        
+        
+        word = text[nt:nt+k]
+        value = 1
+        i = 0
+        for l in word:
+            value *= profile[i][l]
+            i += 1
+  
+
+        if value > mainValue:
+            mainValue = value
+      
+            finalString =word
+   
+             
+    return finalString  
+
+
+# we do for all strings in a dna string list
+# this gives us a list of k-mers 
+
+
+def for_all_dna_strings(dna, k , profile):
+    return [profile_most_probable_kmer(i, k, profile) for i in dna]
+
+
+# make the matrix we need from set of k-mers motifs and using pesudocounts
+
+def make_matrix(dna_motif, k, t):
+
+    newProfile = []
+    score = 0
+    divisor = t
+    for i in range(k):
+        dict1 = dict()
+        dict2 = { 'A':0, 'T':0, 'G':0, 'C':0}
+   
+        for j in range(t):
+            
+            letter = dna_motif[j][i]
+           
+            dict2[letter]+=1
+            
+        dict1['A'] = (dict2['A']+1) / (divisor+4)
+        
+        
+        dict1['T'] = (dict2['T']+1) / (divisor+4)
+      
+        
+        dict1['G'] = (dict2['G']+1) / (divisor+4)
+       
+        
+        dict1['C'] = (dict2['C']+1) / (divisor+4)
+        
+        newProfile.append(dict1)
+      
+        maximum = max(dict2['A'],dict2['T'],dict2['G'],dict2['C'])
+        
+        value = divisor - maximum 
+        score += value
+    
+    
+   
+    return (newProfile, score)
+    
+
+-----------------------------------------------------
+
+
+def gibbs_sampler(dna: list[str], k: int, t: int, n: int) -> list[str]:
+    # entire thing repeat for 20 times
+    bestestScore = 100000000000000000
+    bestestMotif = []
+    
+    for i in range(20):
+        bestScore = 100000000000000000
+        bestMotifs = []
+        motif_random_list = random_motif(dna, k, t)
+        for j in range(n):
+            motif_random_list2 = motif_random_list
+            number = random.randrange(t)
+          
+            chosenMer = motif_random_list2[number]   # chosen motif to delete off
+            listOfMers = list_mers(chosenMer,k, t)
+            matrix , score = make_matrix(motif_random_list2, k, len(listOfMers)) # ignore the score here
+
+            probDist = proba(listOfMers, matrix)
+            rangeList = [i for i in range(len(probDist))]
+            p = probDist
+            p = np.array(p)
+            p /= p.sum()  
+            choice = np.random.choice(rangeList, p=p)
+            
+            motif_random_list[number] = listOfMers[choice]
+            matrix2 , scoreUse = make_matrix(motif_random_list, k, t) # ignore matrix use score
+            if scoreUse < bestScore:
+                bestScore = scoreUse
+                bestMotifs = motif_random_list
+        if bestScore < bestestScore:
+            bestestScore = bestScore
+            bestestMotif = bestMotifs
+            print(bestestScore)
+            
+    return bestestMotif
+
+        
+        
+        
+        # create a list of all mers from chosenMer
+        # get probabilities
+        # use probabilities to randomly choose the Best Mer
+        # replace this best mer in motif_random_list
+        # calculate the score , if score is better then bestmotifs is this set
+        # repeat till n 
+        
+        
+        
+        
+          #ignore the score here
+        
+
+
+def proba(list1, profileMatrix):
+    listReturn = []
+    for l in list1:
+        value = 1
+        for i in range(len(l)):
+            dict1 = profileMatrix[i]
+            value *= dict1[l[i]]
+            
+        listReturn.append(value)
+
+    sum1 = sum(listReturn)
+   
+    list2 = [i/sum1 for i in listReturn]
+    return listReturn
+    
+    
+    
+    
+def list_mers(chosenString,k, t):
+    list1 = []
+    for i in range(len(chosenString)-k+1):
+        word = chosenString[i:t+k]
+        list1.append(word)
+    return list1
+        
+    
+    
+def random_motif(dna, k, t):
+    list1 = []
+    for i in range(len(dna)):
+        string1 = dna[i]
+        number = random.randrange(len(string1)-k+1)
+        wanted = string1[number:number+k]
+        list1.append(wanted)
+        
+    return list1
+
+
+
+def make_matrix(dna_motif, k, t):
+
+    newProfile = []
+    score = 0
+    divisor = t
+    for i in range(k):
+        dict1 = dict()
+        dict2 = { 'A':0, 'T':0, 'G':0, 'C':0}
+   
+        for j in range(t):
+            
+            letter = dna_motif[j][i]
+           
+            dict2[letter]+=1
+            
+        dict1['A'] = (dict2['A']+0.1) / (divisor+0.4)
+        
+        
+        dict1['T'] = (dict2['T']+0.1) / (divisor+0.4)
+      
+        
+        dict1['G'] = (dict2['G']+0.1) / (divisor+0.4)
+       
+        
+        dict1['C'] = (dict2['C']+0.1) / (divisor+0.4)
+        
+        newProfile.append(dict1)
+      
+        maximum = max(dict2['A'],dict2['T'],dict2['G'],dict2['C'])
+        
+        value = divisor - maximum 
+        score += value
+    
+    
+   
+    return (newProfile, score)
+    
